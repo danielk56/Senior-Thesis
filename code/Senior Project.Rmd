@@ -1,0 +1,167 @@
+---
+title: "Senior Project"
+author: "Daniel Kim"
+date: "10/19/2021"
+output: html_document
+---
+
+```{r}
+library(corrplot)	
+library(PerformanceAnalytics)	
+```
+
+```{r}
+fpd <- read.csv("~/Downloads/FinalProjData.csv")
+```
+
+```{r}
+qqnorm(fpd$Unemployment_rate_2019)
+qqnorm(fpd$Proportion.of.Disabled.Workers)
+qqnorm(fpd$X2019.Cost.Per.Meal)
+qqnorm(fpd$PCTPOVALL_2019)
+
+qqnorm(fpd$Log.MEDHHINC_2019)
+qqnorm(fpd$Percent.of.adults.with.less.than.a.high.school.diploma.2015.19)
+```
+
+
+
+```{r}
+fpd2 <- fpd[, c("FIPS", 'Unemployment.Rate', 'Cost.Per.Meal', "X..of.Disabled.Workers", 'X..of.All.in.Poverty', 'Log.MEDHHINC', 'X..of.adults.less.than.HS.Diploma.2015.19')]
+
+fpd2 <- fpd2[complete.cases(fpd2),]
+fpd2 <- fpd2[sample(nrow(fpd2), 1000), ]
+dim(fpd2)
+
+total2 <- total2[, c(2:12)] <- sapply(total2[, c(2:12)], as.numeric)
+
+total2 <- total2[is.finite(rowSums(total2)),]
+```
+
+```{r}
+source("http://reuningscherer.net/multivariate/R/CSQPlot.r.txt")
+CSQPlot(fpd2[,-1],label="Food Insecurty Data")
+```
+
+
+2)
+
+```{r}
+corrplot.mixed(cor(fpd2[,-1]), lower.col = "black", upper = "ellipse", tl.col = "black", number.cex = 1.5, order = "hclust", tl.pos = "lt", tl.cex = 0.5)	
+```
+
+
+
+```{r}
+pc1 <- princomp(na.omit(fpd2[,-1]), cor = TRUE)
+
+princomp(~ ., data = data.frame(fpd2[,-1]), cor = TRUE)
+
+names(pc1)
+print(summary(pc1), digits = 2, loadings = pc1$loadings, cutoff=0)	#gets eigenvalues
+variances <- round(pc1$sdev^2,2)	#gets eigenvalues
+variances 
+```
+
+```{r}
+(2.88 + 1.05)/(2.88 + 1.05 +  0.87 +  0.57 + 0.49 + 0.13 )
+# More than 93% of Variance explained by first 5 principal components
+```
+
+```{r}
+# Here is a screeplot
+screeplot(pc1 ,type="lines",col="red",lwd=2,pch=19,cex=1.2,main="Scree Plot of Food Insecurity Data")	
+```
+
+```{r}
+source("http://reuningscherer.net/multivariate/R/parallel.r.txt")
+parallelplot(pc1)
+
+pc1
+```
+
+
+```{r}
+biplot(pc1,choices=c(1,2),pc.biplot=T)
+#Here is a biplot
+```
+
+```{r}
+chart.Correlation(fpd2[, -1], histogram=TRUE, pch=19)
+```
+
+```{r}
+ciscoreplot<-function(x,comps,namevec){
+  y1<-sqrt(5.99*(x$sdev[comps[1]]^2))
+  ymod<-y1-y1%%.05
+  y1vec<-c(-y1,seq(-ymod,ymod,by=0.05),y1)
+  y2vecpos<-sqrt((5.99-(y1vec^2)/x$sdev[comps[1]]^2)*x$sdev[comps[2]]^2)
+  y2vecneg<--sqrt((5.99-(y1vec^2)/x$sdev[comps[1]]^2)*x$sdev[comps[2]]^2)
+  y2vecpos[1]<-0
+  y2vecneg[1]<-0
+  y2vecpos[length(y2vecpos)]<-0
+  y2vecneg[length(y2vecneg)]<-0
+  plot(x$scores[,comps[1]],x$scores[,comps[2]],pch=19,cex=1.2,ylim=c(min(y2vecneg,x$scores[,comps[2]]),max(y2vecpos,x$scores[,comps[2]])),
+    main="PC Score Plot with 95% CI Ellipse", xlab=paste("Scores for PC",comps[1],sep=" "), ylab=paste("Scores for PC",comps[2],sep=" "),
+    xlim=c(min(y1vec,x$scores[,comps[1]]),max(y1vec,x$scores[,comps[1]])))
+  lines(y1vec,y2vecpos,col="Red",lwd=2)
+  lines(y1vec,y2vecneg,col="Red",lwd=2)
+  outliers<-((x$scores[,comps[1]]^2)/(x$sdev[comps[1]]^2)+(x$scores[,comps[2]]^2)/(x$sdev[comps[2]]^2))>5.99
+  points(x$scores[outliers,comps[1]],x$scores[outliers,comps[2]],pch=0,cex=1.2,col="Red")
+  text(x$scores[outliers,comps[1]],x$scores[outliers,comps[2]],col="Blue",lab=namevec[outliers])
+}
+ciscoreplot(pc1,c(1,2),fpd2[,1])
+```
+
+
+```{r}
+pairs(fpd[, c("X2019.Food.Insecurity.Rate", 'Unemployment.Rate', 'Cost.Per.Meal', "X..of.Disabled.Workers", 'X..of.All.in.Poverty', 'Log.MEDHHINC', 'X..of.adults.less.than.HS.Diploma.2015.19')], pch = 19, lower.panel = NULL, cex.labels=1.25)
+```
+
+
+
+
+```{r}
+fpd <- read.csv("~/Downloads/FinalProjData.csv")
+fpd3 <- fpd[, c('Unemployment.Rate', 'Cost.Per.Meal', "X..of.Disabled.Workers", 'X..of.All.in.Poverty', 'Log.MEDHHINC', 'X..of.adults.less.than.HS.Diploma.2015.19')]
+var(fpd3)
+
+rownames(fpd3) <- fpd[,2]
+fpd3 <- scale(na.omit(fpd3)) # scaling my variables
+sd(fpd3)
+
+mean(fpd3$Unemployment_rate_2019)
+clusterdata <- fpd3[sample(nrow(fpd3), 10), ]
+
+clusterdata
+
+data_keep_rows <- c("13123", "13131", "13135", "13137", "13141", "13145", "13147", "13153", "13155", "13143", "12007", "12009", "12015", "12017", "12019", "12023", "12027", "12029", "12031", "12033", "30091", "30093", "30095", "30097", "30101", "30103", "30105", "30107", "30109", "30111", "21027", "21029", "21031", "21035", "21037", "21041", "21043", "21045", "21047", "21051", "35031","35033","35035","35043","35045","35049","35051", "35053", "35055", "35057", "35061", "55069", "55071", "55073", "55075", "55077", "55079", "55085", "55087", "55089", "55101", "23001", "23003", "23005", "23009", "23011", "23015", "23021","23023", "23025", "23027", "47019", "47021", "47023", "47025", "47031", "47033", "47035", "47037","47041", "47043", "1013", "1021", "1027", "1029", "1031", "1033", "1035", "1037", "1039", "1041", "17093", "17097", "17099", "17101", "17103", "17105", "17109", "17111", "17113")
+
+data_subset <- fpd3[rownames(fpd3) %in% data_keep_rows, ]  # Extract rows from data
+data_subset 
+
+
+#get the distance matrix
+dist1 <- dist(clusterdata, method="euclidean")
+clust1 <- hclust(dist1)
+#draw the dendrogram
+plot(clust1,labels= rownames(clusterdata), cex=0.8, xlab="",ylab="Distance",main="Clustering of FIPS Code Counties", )
+rect.hclust(clust1, k =5)
+```
+
+```{r}
+source("http://reuningscherer.net/multivariate/R/HClusEval.R.txt")
+hclus_eval(clusterdata, dist_m = 'euclidean', plot_op = T)
+```
+
+```{r}
+#get the distance matrix
+dist1 <- dist(data_subset, method="euclidean")
+clust1 <- hclust(dist1)
+#draw the dendrogram
+plot(clust1,labels= rownames(data_subset), cex=0.8, xlab="",ylab="Distance",main="Clustering of FIPS Code Counties", )
+rect.hclust(clust1, k =5)
+```
+
+
+12017, 13143
